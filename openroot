@@ -1,0 +1,152 @@
+#!/usr/bin/expect -f
+
+log_file -a ~/open_root.log
+
+set timeout 30
+log_user 0
+
+puts ""
+puts "=================================================="
+puts " OpenRoot Utility"
+puts "=================================================="
+puts ""
+
+puts -nonewline "IP терминала: "
+flush stdout
+gets stdin host
+set host [string trim $host]
+
+puts "Проверка доступности терминала..."
+
+if {[catch {exec ping -c 1 -W 2 $host} result]} {
+    puts ""
+    puts "Ошибка: терминал $host недоступен"
+    exit 1
+}
+
+puts "OK"
+puts ""
+
+puts -nonewline "Последние 5 символов support-логина: "
+flush stdout
+gets stdin suffix
+
+set user "support-$suffix"
+
+stty -echo
+puts -nonewline "Пароль поддержки: "
+flush stdout
+gets stdin pass
+stty echo
+puts ""
+
+puts -nonewline {Пароль root (Нажмите Enter для установки пароля 123): }
+flush stdout
+gets stdin rootpass
+
+if {$rootpass eq ""} {
+set rootpass "123"
+}
+
+puts ""
+puts {[1/4] Подключение к терминалу...}
+
+spawn ssh -o StrictHostKeyChecking=no $user@$host
+
+expect {
+-re ".password:." {
+send "$pass\r"
+}
+
+timeout {
+    puts "FAILED"
+    puts ""
+    puts "Ошибка: Таймаут подключения"
+    exit 1
+}
+
+eof {
+    puts "FAILED"
+    puts ""
+    puts "Ошибка: SSH подключение не удалось"
+    exit 1
+}
+
+}
+
+expect {
+-re {.*[$#] $} {}
+}
+
+puts " OK"
+
+puts {[2/4] Установка пароля root...}
+
+send "echo '$pass' | sudo -S sh -c \"echo 'root:$rootpass' | chpasswd\"\r"
+
+expect {
+"$ " {}
+"# " {}
+
+timeout {
+    puts "      FAILED"
+    puts ""
+    puts "Ошибка: Не удалось изменить пароль root"
+    exit 1
+}
+
+}
+
+puts " OK"
+
+puts {[3/4] Настройка SSH...}
+
+send "echo '$pass' | sudo -S sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config\r"
+
+expect {
+"$ " {}
+"# " {}
+
+timeout {
+    puts "      FAILED"
+    puts ""
+    puts "Ошибка: Не удалось изменить sshd_config"
+    exit 1
+}
+
+}
+
+puts " OK"
+
+puts {[4/4] Перезапуск SSH...}
+
+send "echo '$pass' | sudo -S systemctl restart sshd || echo '$pass' | sudo -S systemctl restart ssh\r"
+
+expect {
+"$ " {}
+"# " {}
+
+timeout {
+    puts "      FAILED"
+    puts ""
+    puts "Ошибка: Не удалось перезапустить SSH"
+    exit 1
+}
+
+}
+
+puts " OK"
+
+send "exit\r"
+expect eof
+
+puts ""
+puts "=================================================="
+puts " УСПЕШНО"
+puts "=================================================="
+puts ""
+puts "Root логин : root"
+puts "Root пароль : $rootpass"
+puts ""
+puts "=================================================="
+puts ""
