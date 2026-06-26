@@ -1,0 +1,133 @@
+#!/usr/bin/expect -f
+
+log_file -a ~/close_root.log
+
+set timeout 30
+log_user 0
+
+puts ""
+puts "=================================================="
+puts " CloseRoot Utility"
+puts "=================================================="
+puts ""
+
+puts -nonewline "IP терминала: "
+flush stdout
+gets stdin host
+set host [string trim $host]
+
+puts "Проверка доступности терминала..."
+
+if {[catch {exec ping -c 1 -W 2 $host} result]} {
+    puts ""
+    puts "Ошибка: терминал $host недоступен"
+    exit 1
+}
+
+puts "OK"
+puts ""
+
+puts -nonewline "Последние 5 символов support-логина: "
+flush stdout
+gets stdin suffix
+
+set user "support-$suffix"
+
+stty -echo
+puts -nonewline "Пароль поддержки: "
+flush stdout
+gets stdin pass
+stty echo
+puts ""
+
+puts ""
+puts {[1/3] Подключение к терминалу...}
+
+spawn ssh -o StrictHostKeyChecking=no $user@$host
+
+expect {
+    -re ".*password:.*" {
+        send "$pass\r"
+    }
+
+    timeout {
+        puts "FAILED"
+        puts ""
+        puts "Ошибка: Таймаут подключения"
+        exit 1
+    }
+
+    eof {
+        puts "FAILED"
+        puts ""
+        puts "Ошибка: SSH подключение не удалось"
+        exit 1
+    }
+}
+
+expect {
+    -re {.*[$#] $} {}
+}
+
+puts " OK"
+
+puts {[2/3] Закрытие root SSH...}
+
+send "echo '$pass' | sudo -S sed -i 's/^#\\?PermitRootLogin.*/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config\r"
+
+expect {
+    "$ " {}
+    "# " {}
+
+    timeout {
+        puts "FAILED"
+        puts ""
+        puts "Ошибка: Не удалось изменить sshd_config"
+        exit 1
+    }
+}
+
+puts " OK"
+
+puts {[3/3] Перезапуск SSH...}
+
+send "echo '$pass' | sudo -S systemctl restart sshd || echo '$pass' | sudo -S systemctl restart ssh\r"
+
+expect {
+    "$ " {}
+    "# " {}
+
+    timeout {
+        puts "FAILED"
+        puts ""
+        puts "Ошибка: Не удалось перезапустить SSH"
+        exit 1
+    }
+}
+
+puts " OK"
+
+send "echo '$pass' | sudo -S sshd -T | grep permitrootlogin\r"
+
+expect {
+    "permitrootlogin prohibit-password" {}
+    "permitrootlogin without-password" {}
+
+    timeout {
+        puts ""
+        puts "Внимание: не удалось проверить состояние SSH."
+    }
+}
+
+send "exit\r"
+expect eof
+
+puts ""
+puts "=================================================="
+puts " ROOT SSH ЗАКРЫТ"
+puts "=================================================="
+puts ""
+puts "PermitRootLogin = prohibit-password"
+puts ""
+puts "=================================================="
+puts ""

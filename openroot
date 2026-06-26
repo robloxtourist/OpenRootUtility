@@ -1,13 +1,16 @@
 #!/usr/bin/expect -f
 
+set APPNAME "OpenRoot Utility"
+set VERSION "v1.0.0"
+
 log_file -a ~/open_root.log
 
 set timeout 30
-log_user 0
+log_user 1
 
 puts ""
 puts "=================================================="
-puts " OpenRoot Utility"
+puts " $APPNAME $VERSION"
 puts "=================================================="
 puts ""
 
