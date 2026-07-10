@@ -1,0 +1,3 @@
+paramiko>=2.12,<4
+rich>=13,<14
+customtkinter>=5.2,<6
