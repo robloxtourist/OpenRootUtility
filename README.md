@@ -1,6 +1,6 @@
 # OpenRoot Utility
 
-Утилита для открытия и закрытия root-доступа на тестовых терминалах Debian и NXP.
+Утилита для управления root-доступом на тестовых терминалах.
 
 ## Возможности
 
@@ -14,7 +14,7 @@
 * CLI с оформлением на Rich
 * GUI-прототип на CustomTkinter
 
-## Установка для коллег
+## Установка
 
 ```bash
 git clone https://github.com/robloxtourist/OpenRootUtility.git
