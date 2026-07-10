@@ -42,6 +42,7 @@ class OpenRootApp(ctk.CTk):
 
         self.action = tk.StringVar(value="open")
         self.host = tk.StringVar()
+        self.support_prefix = tk.StringVar(value="support-")
         self.suffix = tk.StringVar()
         self.support_password = tk.StringVar()
         self.root_password = tk.StringVar(value="123")
@@ -80,7 +81,7 @@ class OpenRootApp(ctk.CTk):
         action_control.grid(row=0, column=1, padx=(0, 18), pady=(18, 10), sticky="ew")
 
         self._add_entry(form, 1, "IP терминала", self.host)
-        self._add_entry(form, 2, "Support suffix", self.suffix)
+        self._add_support_login_row(form, 2)
         self._add_entry(form, 3, "Пароль поддержки", self.support_password, show="*")
         self._add_entry(form, 4, "Root пароль", self.root_password, show="*")
 
@@ -125,6 +126,24 @@ class OpenRootApp(ctk.CTk):
         entry = ctk.CTkEntry(parent, textvariable=variable, show=show)
         entry.grid(row=row, column=1, padx=(0, 18), pady=8, sticky="ew")
 
+    def _add_support_login_row(self, parent: ctk.CTkFrame, row: int) -> None:
+        ctk.CTkLabel(parent, text="Support login").grid(row=row, column=0, padx=(18, 12), pady=8, sticky="w")
+
+        container = ctk.CTkFrame(parent, fg_color="transparent")
+        container.grid(row=row, column=1, padx=(0, 18), pady=8, sticky="ew")
+        container.grid_columnconfigure(1, weight=1)
+
+        prefix = ctk.CTkOptionMenu(
+            container,
+            values=["support-", "support"],
+            variable=self.support_prefix,
+            width=120,
+        )
+        prefix.grid(row=0, column=0, padx=(0, 8), sticky="w")
+
+        suffix = ctk.CTkEntry(container, textvariable=self.suffix, placeholder_text="последние символы")
+        suffix.grid(row=0, column=1, sticky="ew")
+
     def _set_action(self, value: str) -> None:
         self.action.set("close" if value.startswith("Закрыть") else "open")
 
@@ -133,6 +152,7 @@ class OpenRootApp(ctk.CTk):
             return
 
         host = self.host.get().strip()
+        support_prefix = self.support_prefix.get()
         suffix = self.suffix.get().strip()
         support_password = self.support_password.get()
         root_password = self.root_password.get() or "123"
@@ -152,7 +172,7 @@ class OpenRootApp(ctk.CTk):
 
         self.worker = threading.Thread(
             target=self._run_operation,
-            args=(self.action.get(), host, suffix, support_password, root_password),
+            args=(self.action.get(), host, support_prefix, suffix, support_password, root_password),
             daemon=True,
         )
         self.worker.start()
@@ -161,6 +181,7 @@ class OpenRootApp(ctk.CTk):
         self,
         action: str,
         host: str,
+        support_prefix: str,
         suffix: str,
         support_password: str,
         root_password: str,
@@ -172,6 +193,7 @@ class OpenRootApp(ctk.CTk):
                     suffix=suffix,
                     support_password=support_password,
                     root_password=root_password,
+                    support_prefix=support_prefix,
                     progress=self._progress,
                 )
             else:
@@ -180,6 +202,7 @@ class OpenRootApp(ctk.CTk):
                     suffix=suffix,
                     support_password=support_password,
                     root_password=root_password,
+                    support_prefix=support_prefix,
                     progress=self._progress,
                 )
         except OpenRootError as exc:

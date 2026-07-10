@@ -221,10 +221,11 @@ def open_terminal_root(
     suffix: str,
     support_password: str,
     root_password: str = "123",
+    support_prefix: str = "support-",
     progress: ProgressCallback | None = None,
 ) -> OpenRootResult:
     emit = progress or (lambda _message: None)
-    user = f"support-{suffix}"
+    user = f"{support_prefix}{suffix}"
     root_password = root_password or "123"
 
     emit("Проверка доступности терминала...")
@@ -264,10 +265,11 @@ def close_terminal_root(
     suffix: str,
     support_password: str,
     root_password: str = "123",
+    support_prefix: str = "support-",
     progress: ProgressCallback | None = None,
 ) -> OpenRootResult:
     emit = progress or (lambda _message: None)
-    user = f"support-{suffix}"
+    user = f"{support_prefix}{suffix}"
     root_password = root_password or "123"
 
     emit("Проверка доступности терминала...")
