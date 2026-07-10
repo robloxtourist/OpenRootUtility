@@ -32,8 +32,8 @@ sudo apt install python3-tk
 После установки:
 
 ```bash
-git clone git@github.com:robloxtourist/OpenRootUtility.git
-cd OpenRootUtility
+openroot
+```
 
 GUI:
 
