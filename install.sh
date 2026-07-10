@@ -6,6 +6,8 @@ APP_NAME="OpenRoot Utility"
 INSTALL_DIR="${OPENROOT_INSTALL_DIR:-$HOME/.local/share/openroot}"
 BIN_DIR="${OPENROOT_BIN_DIR:-$HOME/.local/bin}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
+PROFILE_FILE="${OPENROOT_PROFILE_FILE:-$HOME/.profile}"
+PATH_MARKER="# OpenRoot Utility PATH"
 
 echo "================================="
 echo " ${APP_NAME} Installer"
@@ -66,13 +68,19 @@ echo "[+] OpenRoot установлен"
 echo ""
 
 if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
-    echo "ВНИМАНИЕ: $BIN_DIR отсутствует в PATH"
+    if ! grep -Fq "$PATH_MARKER" "$PROFILE_FILE" 2>/dev/null; then
+        {
+            echo ""
+            echo "$PATH_MARKER"
+            echo "export PATH=\"$BIN_DIR:\$PATH\""
+        } >> "$PROFILE_FILE"
+        echo "[+] $BIN_DIR добавлен в $PROFILE_FILE"
+    else
+        echo "[+] PATH уже настроен в $PROFILE_FILE"
+    fi
     echo ""
-    echo "Добавьте в ~/.bashrc или ~/.profile:"
-    echo "export PATH=\"$BIN_DIR:\$PATH\""
-    echo ""
-    echo "После этого выполните:"
-    echo "source ~/.bashrc"
+    echo "Откройте новый терминал или выполните:"
+    echo "source \"$PROFILE_FILE\""
     echo ""
 fi
 
